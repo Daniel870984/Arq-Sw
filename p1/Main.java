@@ -14,6 +14,8 @@ public class Main {
 
         // Suscribir inversores a acciones específicas
         StockMarket.attach("Google", investor1);
+        StockMarket.attach("Amazon", investor1);
+        StockMarket.attach("Nvidia", investor1);
         StockMarket.attach("Amazon", investor2);
         StockMarket.attach("Nvidia", investor3);
 

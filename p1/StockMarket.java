@@ -1,6 +1,6 @@
 import java.util.*;
 
-public class StockMarket {
+public class StockMarket implements subject{
     private String name;
     private Map<String, Double> acciones; // Valores actuales de las acciones
     private Map<String, List<observer>> observadores; // Observadores por acción, a unas acciones pueden estar suscritos varios observadores
@@ -25,6 +25,8 @@ public class StockMarket {
     public void attach(String stockName, observer investor) {
         if (observadores.containsKey(stockName)) {
             observadores.get(stockName).add(investor);
+        Double value = acciones.get(stockName);
+        investor.seguir(stockName,value);
         } else {
             System.out.println("La acción " + stockName + " no existe");
         }
@@ -55,7 +57,7 @@ public class StockMarket {
     }
 
     // Notificar a los observadores interesados
-    private void inform(String stockName, double newValue) {
+    public void inform(String stockName, double newValue) {
         if (observadores.containsKey(stockName)) {
             for (observer inversor : observadores.get(stockName)) {
                 inversor.Update(stockName, newValue);
