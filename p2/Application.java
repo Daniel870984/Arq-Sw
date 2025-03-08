@@ -8,7 +8,7 @@ public class Application {
 	private static void createAndShowGUI() {			
 		//creamos el JFrame
 		JFrame.setDefaultLookAndFeelDecorated(true); 
-		JFrame frame = new JFrame("Practica 5");
+		JFrame frame = new JFrame("Practica 2");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		//creamos la ventana y sus componentes y los anyadimos al JFrame	

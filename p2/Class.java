@@ -10,6 +10,8 @@ public class Class extends JPanel {
    private int y;
    // Bandera para determinar si el ratón está sobre la clase
    private boolean hovered = false;
+   private boolean selected = false;
+
 
    public Class() {
       instanceCount++;
@@ -41,6 +43,13 @@ public class Class extends JPanel {
    public boolean isHovered() {
       return hovered;
    }
+   public void setSelected(boolean selected) {
+      this.selected = selected;
+  }
+
+  public boolean isSelected() {
+      return selected;
+  }
 
    // Comprueba si un punto (x, y) está dentro del rectángulo de la clase
    public boolean contains(int x, int y) {
@@ -50,17 +59,21 @@ public class Class extends JPanel {
    }
 
    // Dibuja la clase en la posición indicada
-   public void draw(Graphics g, int x, int y) {
+   public void draw(Graphics g, int x, int y,boolean isAssociationTarget) {
       this.x = x;
       this.y = y;
       Graphics2D g2d = (Graphics2D) g;
       int width = 120;
       int height = 90;
 
+      if (selected) {
+         g2d.setColor(new Color(0, 255, 255)); // cyan
+      }
       // Si el ratón está sobre la clase se pinta un fondo verde clarito; de lo contrario, blanco
-      if (hovered) {
+      else if (isAssociationTarget) {
          g2d.setColor(new Color(144, 238, 144)); // LightGreen
-      } else {
+      } 
+      else {   
          g2d.setColor(Color.WHITE);
       }
       g2d.fillRect(x, y, width, height);

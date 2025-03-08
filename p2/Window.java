@@ -65,10 +65,10 @@ public class Window implements ActionListener {
 		diagram.requestFocusInWindow();
 	}
 	
-	public void updateNClasses(Diagram d){
-		labelNClasses.setText("Classes: " + d.getNClasses());
-	}
-	public void updateNAssociations(Diagram d){
-		labelNAssociations.setText("Associations: " + diagram.getNAssociations());
-	}
+	public void updateNClasses() {
+        labelNClasses.setText("Classes: " + diagram.getNClasses()); // 🔹 Actualizar la etiqueta
+    }
+	public void updateNAssociations() {
+        labelNAssociations.setText("Associations: " + diagram.getNAssociations()); // 🔹 Actualizar la etiqueta
+    }
 }

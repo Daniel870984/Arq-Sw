@@ -8,6 +8,8 @@ import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Vector;
+
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 
@@ -19,6 +21,19 @@ public class Diagram extends JPanel implements MouseListener, MouseMotionListene
    private Class selectedClass = null;
    // Desfase entre el punto de clic y la posición superior izquierda del objeto
    private int offsetX, offsetY;
+   private Class hoveredClass = null; // 🔹 Clase sobre la que está el cursor
+   private boolean isDragging = false; // 🔹 Detectar si se está arrastrando una clase
+   private Class highlightedClass = null; // 🔹 Clase seleccionada en azul (cyan)
+   private Class associationTargetClass = null; // 🔹 Clase sobre la que podemos soltar la asociación
+   private int tempX, tempY; // 🔹 Coordenadas temporales mientras se arrastra una asociación
+   private boolean isCreatingAssociation = false; // 🔹 Detectar si estamos creando una asociación
+   private Vector<Association> associations = new Vector<>(); // 🔹 Almacena las asociaciones
+
+
+
+
+
+
 
    public Diagram(Window var1) {
       this.window = var1;
@@ -40,6 +55,7 @@ public class Diagram extends JPanel implements MouseListener, MouseMotionListene
       newClass.setPosition(10 + offset, 10 + offset);
       newClass.setOpaque(true);
       this.classList.add(newClass);
+      window.updateNClasses(); // 🔹 Actualizar número de clases en la interfaz
       this.repaint();
    }
 
@@ -49,94 +65,193 @@ public class Diagram extends JPanel implements MouseListener, MouseMotionListene
 
    public int getNAssociations() {
       // Se mantiene el valor de ejemplo
-      return 1;
+      return this.associations.size();
    }
 
    protected void paintComponent(Graphics g) {
-      super.paintComponent(g);
-      // Se recorre la lista y se dibujan las clases en sus posiciones actuales
-      for (Class c : this.classList) {
-         c.draw(g, c.getX(), c.getY());
-      }
-   }
+        super.paintComponent(g);
+
+        // 🔹 Dibujar todas las asociaciones antes que las clases
+        for (Association assoc : associations) {
+            assoc.draw(g);
+        }
+
+        // 🔹 Dibujar la línea temporal si se está creando una asociación
+        if (isCreatingAssociation && selectedClass != null) {
+            g.setColor(Color.GRAY);
+            int x1 = selectedClass.getX() + 60;
+            int y1 = selectedClass.getY() + 45;
+            g.drawLine(x1, y1, tempX, tempY);
+        }
+
+        // 🔹 Dibujar las clases (solo se iluminan en verde si son objetivo de asociación)
+        for (Class c : classList) {
+            boolean isAssociationTarget = (c == associationTargetClass);
+            c.draw(g, c.getX(), c.getY(), isAssociationTarget);
+        }
+    }
 
    // --- Métodos de MouseListener y MouseMotionListener ---
 
    public void mousePressed(MouseEvent e) {
       int x = e.getX();
       int y = e.getY();
-      // Recorrer la lista en orden inverso para seleccionar el objeto "superior"
-      for (int i = classList.size() - 1; i >= 0; i--) {
-         Class c = classList.get(i);
-         if (c.contains(x, y)) {
-            selectedClass = c;
-            offsetX = x - c.getX();
-            offsetY = y - c.getY();
-            break;
+
+      if (e.getButton() == MouseEvent.BUTTON3) {
+         for (int i = associations.size() - 1; i >= 0; i--) {
+             Association assoc = associations.get(i);
+             if (assoc.isClicked(x, y)) { // 🔹 Verificar si el clic fue sobre la línea
+                 associations.remove(i); // 🔹 Eliminar la asociación
+                 window.updateNAssociations(); // 🔹 Actualizar el contador de asociaciones
+                 repaint();
+                 return; // 🔹 Salir del método para evitar otras acciones
+             }
          }
+     }
+
+      // 🔹 Recorrer la lista en orden inverso para seleccionar la clase superior
+      for (int i = classList.size() - 1; i >= 0; i--) {
+          Class c = classList.get(i);
+          if (c.contains(x, y)) {
+            if (e.getButton() == MouseEvent.BUTTON1) {
+                if (highlightedClass == c) { // 🔹 Iniciar una asociación
+                    isCreatingAssociation = true;
+                    selectedClass = c;
+                    tempX = x;
+                    tempY = y;
+                } else { // 🔹 Mover clase normal
+                    selectedClass = c;
+                    offsetX = x - c.getX();
+                    offsetY = y - c.getY();
+                    classList.remove(i);
+                    classList.add(c);
+                    isDragging = true;
+                }
+            } else if (e.getButton() == MouseEvent.BUTTON3) { // 🔹 Borrar clase
+               if (highlightedClass == c) {
+                   highlightedClass = null;
+               }
+
+               // 🔹 Eliminar todas las asociaciones conectadas a la clase eliminada
+               associations.removeIf(assoc -> assoc.getClassA() == c || assoc.getClassB() == c);
+
+               classList.remove(i);
+               window.updateNClasses();
+               window.updateNAssociations(); // 🔹 Actualizar el contador de asociaciones
+               repaint();
+           }
+            break;
+        }
       }
-   }
+  }
 
    public void mouseDragged(MouseEvent e) {
-      if (selectedClass != null) {
+      if (isCreatingAssociation) {
+         tempX = e.getX();
+         tempY = e.getY();
+
+         // 🔹 Resaltar en verde solo si es un objetivo válido para la asociación
+         associationTargetClass = null;
+         for (Class c : classList) {
+             if (c.contains(tempX, tempY) && c != selectedClass) {
+                 associationTargetClass = c;
+                 break;
+             }
+         }
+         repaint();
+      }else if (selectedClass != null) {
          int newX = e.getX() - offsetX;
          int newY = e.getY() - offsetY;
          selectedClass.setPosition(newX, newY);
-         this.repaint();
-      }
+         repaint();
+     }
    }
 
    public void mouseReleased(MouseEvent e) {
-      selectedClass = null;
+      if (isCreatingAssociation && selectedClass != null) {
+         if (associationTargetClass != null && associationTargetClass != selectedClass) {
+            // 🔹 Crear una asociación normal entre dos clases distintas
+            associations.add(new Association(selectedClass, associationTargetClass));
+        } else if (selectedClass.contains(tempX, tempY)) {
+            // 🔹 Si el usuario suelta sobre la misma clase, crear una auto-asociación
+            associations.add(new Association(selectedClass, selectedClass));
+        }
+        window.updateNAssociations(); // 🔹 Actualizar el contador de asociaciones
+
+         // 🔹 Deseleccionar cualquier clase en cyan cuando se crea una asociación
+         if (highlightedClass != null) {
+            highlightedClass.setSelected(false);
+            highlightedClass = null;
+        }
+     }
+     selectedClass = null;
+     isCreatingAssociation = false;
+     isDragging = false;
+     associationTargetClass = null; // 🔹 Limpiar el objetivo de asociación para borrar el verde
+     repaint();
    }
 
    public void mouseEntered(MouseEvent e) { }
    public void mouseExited(MouseEvent e) { }
    public void mouseClicked(MouseEvent e) { }
 
-   // Actualiza el estado "hovered" de cada clase para resaltar solo la superior
    public void mouseMoved(MouseEvent e) {
       int x = e.getX();
       int y = e.getY();
-      // Se determina la clase que se encuentra en la parte superior (recorriendo en orden inverso)
-      Class hoveredClass = null;
+      Class newHoveredClass = null;
+
       for (int i = classList.size() - 1; i >= 0; i--) {
-         Class c = classList.get(i);
-         if (c.contains(x, y)) {
-            hoveredClass = c;
-            break;
-         }
+          Class c = classList.get(i);
+          if (c.contains(x, y)) {
+              newHoveredClass = c;
+
+              // 🔹 Si la clase no está al frente, traerla adelante
+              if (classList.indexOf(c) != classList.size() - 1) {
+                  classList.remove(c);
+                  classList.add(c);
+              }
+              break;
+          }
       }
-      // Actualizamos el estado "hovered" de todas las clases
-      boolean repaintNeeded = false;
-      for (Class c : classList) {
-         boolean shouldBeHovered = (c == hoveredClass);
-         if (shouldBeHovered != c.isHovered()) {
-            c.setHovered(shouldBeHovered);
-            repaintNeeded = true;
-         }
+
+      // 🔹 Si la clase sobre la que pasamos ha cambiado, actualizamos el estado
+      if (hoveredClass != newHoveredClass) {
+          if (hoveredClass != null) {
+              hoveredClass.setHovered(false); // Quitamos el estado "hovered" de la anterior
+          }
+          if (newHoveredClass != null) {
+              newHoveredClass.setHovered(true); // Activamos "hovered" en la nueva
+          }
+          hoveredClass = newHoveredClass;
+          repaint();
       }
-      if (repaintNeeded) {
-         this.repaint();
-      }
-   }
+  }
 
    // --- Métodos de KeyListener ---
 
    public void keyTyped(KeyEvent e) { }
 
    public void keyPressed(KeyEvent e) {
-      // Si se pulsa la tecla Supr (Delete)
-      if (e.getKeyCode() == KeyEvent.VK_DELETE) {
-         // Se recorre la lista en orden inverso y se elimina la primera clase que esté resaltada
-         for (int i = classList.size() - 1; i >= 0; i--) {
-            Class c = classList.get(i);
-            if (c.isHovered()) {
-               classList.remove(i);
-               break;  // Eliminamos solo una clase
+      if (e.getKeyCode() == KeyEvent.VK_S) {
+         if (isDragging) {
+            return; // 🔹 Ignorar `S` si el usuario está arrastrando la clase
+         }
+         if (hoveredClass != null) {
+            // 🔹 Si hay una clase bajo el cursor, seleccionar/desseleccionar
+            if (highlightedClass != null && highlightedClass != hoveredClass) {
+                highlightedClass.setSelected(false); // 🔹 Desseleccionar la anterior correctamente
+            }
+
+            hoveredClass.setSelected(!hoveredClass.isSelected()); // 🔹 Cambiar selección
+            highlightedClass = hoveredClass.isSelected() ? hoveredClass : null; // 🔹 Actualizar referencia
+         }else {
+            // 🔹 Si no hay clase bajo el cursor, deseleccionar la última seleccionada
+            if (highlightedClass != null) {
+                highlightedClass.setSelected(false);
+                highlightedClass = null;
             }
          }
-         this.repaint();
+        repaint();
       }
    }
 
