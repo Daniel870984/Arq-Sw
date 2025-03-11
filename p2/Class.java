@@ -1,6 +1,9 @@
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.swing.JPanel;
 
 public class Class extends JPanel {
@@ -11,6 +14,8 @@ public class Class extends JPanel {
    // Bandera para determinar si el ratón está sobre la clase
    private boolean hovered = false;
    private boolean selected = false;
+   private List<String> attributes = new ArrayList<>(); // 🔹 Lista de atributos
+   private List<String> methods = new ArrayList<>(); // 🔹 Lista de métodos
 
 
    public Class() {
@@ -51,44 +56,70 @@ public class Class extends JPanel {
       return selected;
   }
 
-   // Comprueba si un punto (x, y) está dentro del rectángulo de la clase
-   public boolean contains(int x, int y) {
+  public boolean contains(int x, int y) {
       int width = 120;
-      int height = 90;
+      int height = 90 + (attributes.size() + methods.size()) * 15; // Ajustar tamaño según contenido
       return x >= this.x && x <= this.x + width && y >= this.y && y <= this.y + height;
    }
 
-   // Dibuja la clase en la posición indicada
-   public void draw(Graphics g, int x, int y,boolean isAssociationTarget) {
-      this.x = x;
-      this.y = y;
-      Graphics2D g2d = (Graphics2D) g;
-      int width = 120;
-      int height = 90;
+public void addAttribute(String attribute) {
+   attributes.add(attribute);
+}
 
-      if (selected) {
-         g2d.setColor(new Color(0, 255, 255)); // cyan
-      }
-      // Si el ratón está sobre la clase se pinta un fondo verde clarito; de lo contrario, blanco
-      else if (isAssociationTarget) {
-         g2d.setColor(new Color(144, 238, 144)); // LightGreen
-      } 
-      else {   
-         g2d.setColor(Color.WHITE);
-      }
-      g2d.fillRect(x, y, width, height);
+public void addMethod(String method) {
+   methods.add(method);
+}
 
-      // Dibujar el contorno y líneas separadoras
-      g2d.setColor(Color.BLACK);
-      g2d.drawRect(x, y, width, height);
-      g2d.drawLine(x, y + 30, x + width, y + 30);
-      g2d.drawLine(x, y + 60, x + width, y + 60);
-      
-      // Dibujar textos
-      g2d.drawString(this.className, x + 5, y + 20);
-      g2d.drawString("Atributos...", x + 5, y + 50);
-      g2d.drawString("Operaciones...", x + 5, y + 80);
+public void draw(Graphics g, int x, int y, boolean isAssociationTarget) {
+   this.x = x;
+   this.y = y;
+   Graphics2D g2d = (Graphics2D) g;
+   int width = 120;
+   int height = 75 + (attributes.size() + methods.size()) * 15; // Ajustar altura dinámicamente
+
+   if (selected) {
+       g2d.setColor(new Color(0, 255, 255)); // Cyan cuando está seleccionada
+   } else if (isAssociationTarget) {
+       g2d.setColor(new Color(144, 238, 144)); // 🔹 Verde cuando es un objetivo de asociación
+   } else {
+       g2d.setColor(Color.WHITE);
    }
+   g2d.fillRect(x, y, width, height);
+
+   g2d.setColor(Color.BLACK);
+   g2d.drawRect(x, y, width, height);
+   g2d.drawLine(x, y + 30, x + width, y + 30);
+   g2d.drawLine(x, y + 30 + attributes.size() * 15, x + width, y + 30 + attributes.size() * 15);
+
+   g2d.drawString(this.className, x + 5, y + 20);
+
+   // 🔹 Dibujar los atributos
+   int textY = y + 43;
+   if (attributes.isEmpty()) {
+       g2d.drawString("Atributos...", x + 5, textY); // Si no hay atributos, mostrar el texto predeterminado
+       textY += 15;
+   } else {
+       for (String attr : attributes) {
+           g2d.drawString(attr, x + 5, textY);
+           textY += 15;
+       }
+   }
+
+   g2d.drawLine(x, y + 30 + Math.max(attributes.size() * 15, 15), x + width, y + 30 + Math.max(attributes.size() * 15, 15)); // Línea divisoria
+
+
+   // 🔹 Dibujar los métodos
+   textY += 5; // Espacio entre atributos y métodos
+   if (methods.isEmpty()) {
+       g2d.drawString("Operaciones...", x + 5, textY); // Si no hay métodos, mostrar el texto predeterminado
+       textY += 15;
+   } else {
+       for (String method : methods) {
+           g2d.drawString(method, x + 5, textY);
+           textY += 15;
+       }
+   }
+}
 
    // Se puede omitir la redefinición de paintComponent si se dibuja desde Diagram
    protected void paintComponent(Graphics g) {

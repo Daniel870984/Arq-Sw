@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 public class Diagram extends JPanel implements MouseListener, MouseMotionListener, KeyListener {
@@ -232,28 +233,44 @@ public class Diagram extends JPanel implements MouseListener, MouseMotionListene
    public void keyTyped(KeyEvent e) { }
 
    public void keyPressed(KeyEvent e) {
-      if (e.getKeyCode() == KeyEvent.VK_S) {
-         if (isDragging) {
-            return; // 🔹 Ignorar `S` si el usuario está arrastrando la clase
-         }
-         if (hoveredClass != null) {
-            // 🔹 Si hay una clase bajo el cursor, seleccionar/desseleccionar
-            if (highlightedClass != null && highlightedClass != hoveredClass) {
-                highlightedClass.setSelected(false); // 🔹 Desseleccionar la anterior correctamente
+        if (e.getKeyCode() == KeyEvent.VK_S) {
+            if (isDragging) {
+                return; // 🔹 Ignorar `S` si el usuario está arrastrando la clase
             }
+            if (hoveredClass != null) {
+                // 🔹 Si hay una clase bajo el cursor, seleccionar/desseleccionar
+                if (highlightedClass != null && highlightedClass != hoveredClass) {
+                    highlightedClass.setSelected(false); // 🔹 Desseleccionar la anterior correctamente
+                }
 
-            hoveredClass.setSelected(!hoveredClass.isSelected()); // 🔹 Cambiar selección
-            highlightedClass = hoveredClass.isSelected() ? hoveredClass : null; // 🔹 Actualizar referencia
-         }else {
-            // 🔹 Si no hay clase bajo el cursor, deseleccionar la última seleccionada
+                hoveredClass.setSelected(!hoveredClass.isSelected()); // 🔹 Cambiar selección
+                highlightedClass = hoveredClass.isSelected() ? hoveredClass : null; // 🔹 Actualizar referencia
+            }else {
+                // 🔹 Si no hay clase bajo el cursor, deseleccionar la última seleccionada
+                if (highlightedClass != null) {
+                    highlightedClass.setSelected(false);
+                    highlightedClass = null;
+                }
+            }
+            repaint();
+        }
+        else if (e.getKeyCode() == KeyEvent.VK_A) {
             if (highlightedClass != null) {
-                highlightedClass.setSelected(false);
-                highlightedClass = null;
+                String attr = JOptionPane.showInputDialog("Ingrese un atributo:");
+                if (attr != null && !attr.trim().isEmpty()) {
+                    highlightedClass.addAttribute(attr);
+                    repaint();
+                }
             }
-         }
-        repaint();
-      }
-   }
-
-   public void keyReleased(KeyEvent e) { }
+        } else if (e.getKeyCode() == KeyEvent.VK_M) {
+            if (highlightedClass != null) {
+                String method = JOptionPane.showInputDialog("Ingrese un método:");
+                if (method != null && !method.trim().isEmpty()) {
+                    highlightedClass.addMethod(method);
+                    repaint();
+                }
+            }
+        }
+    }
+    public void keyReleased(KeyEvent e) { }
 }
