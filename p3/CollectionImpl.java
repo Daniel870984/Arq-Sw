@@ -27,7 +27,8 @@ public class CollectionImpl extends UnicastRemoteObject implements Collection {
 
     public static void main(String args[]) {
         try {
-            String hostName = "localhost"; // Dirección del servidor
+            System.setProperty("java.rmi.server.hostname", "10.1.26.0"); 
+            String hostName = "10.1.26.0"; // Dirección del servidor
             CollectionImpl obj = new CollectionImpl();
             Naming.rebind("//" + hostName + "/MyCollection", obj);
             System.out.println("Objeto remoto registrado.");
