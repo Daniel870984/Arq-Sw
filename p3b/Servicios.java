@@ -1,25 +1,28 @@
-package p3b;
 
 import java.io.Serializable;
-import java.util.ArrayList;
+import java.util.Vector;
 
+/**
+ * Clase que encapsula una lista de servicios.
+ */
 public class Servicios implements Serializable {
-    private ArrayList<String> servicios;
+    private Vector<Servicio> servicios;
 
-    public Servicios() {
-        servicios = new ArrayList<>();
+    public Servicios(Vector<Servicio> servicios) {
+        this.servicios = servicios;
     }
 
-    public void addServicio(String servicio) {
-        servicios.add(servicio);
-    }
-
-    public ArrayList<String> getServicios() {
+    public Vector<Servicio> getServicios() {
         return servicios;
     }
-    
+
     @Override
     public String toString() {
-        return servicios.toString();
+        StringBuilder sb = new StringBuilder();
+        for (Servicio s : servicios) {
+            sb.append(s.toString()).append("\n");
+        }
+        return sb.toString();
     }
 }
+

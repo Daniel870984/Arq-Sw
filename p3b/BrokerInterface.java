@@ -1,22 +1,19 @@
-package p3b;
-
-
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.Vector;
 
+/**
+ * Interfaz remota del Broker.
+ */
 public interface BrokerInterface extends Remote {
-    // API para los servidores:
-    void registrarServidor(String nombreServidor, String hostRemoto) throws RemoteException;
-    void altaServicio(String nombreServidor, String nomServicio, Vector listaParam, String tipoRetorno) throws RemoteException;
-    void bajaServicio(String nombreServidor, String nomServicio) throws RemoteException;
+    // API para los servidores
+    void registrar_servidor(String nombre_servidor, String host_remoto_IP_puerto) throws RemoteException;
+    void alta_servicio(String nombre_servidor, String nom_servicio, Vector lista_param, String tipo_retorno) throws RemoteException;
+    void baja_servicio(String nombre_servidor, String nom_servicio) throws RemoteException;
     
-    // API para los clientes:
-    Servicios listaServicios() throws RemoteException;
-    Respuesta ejecutarServicio(String nomServicio, Vector parametrosServicio) throws RemoteException;
-    
-    // Para la versión asíncrona (a implementar en el futuro):
-    // void ejecutarServicioAsinc(String nomServicio, Vector parametrosServicio) throws RemoteException;
-    // Respuesta obtenerRespuestaAsinc(String nomServicio) throws RemoteException;
+    // API para los clientes
+    Servicios lista_servicios() throws RemoteException;
+    Respuesta ejecutar_servicio(String nom_servicio, Vector parametros_servicio) throws RemoteException;
 }
+
 
