@@ -14,6 +14,8 @@ public interface BrokerInterface extends Remote {
     // API para los clientes
     Servicios lista_servicios() throws RemoteException;
     Respuesta ejecutar_servicio(String nom_servicio, Vector parametros_servicio) throws RemoteException;
+    void ejecutar_servicio_asinc(String nom_servicio, Vector parametros_servicio, String clientId) throws RemoteException;
+    Respuesta obtener_respuesta_asinc(String nom_servicio, String clientId) throws RemoteException;
 }
 
 

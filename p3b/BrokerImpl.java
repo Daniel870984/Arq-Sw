@@ -1,51 +1,49 @@
+import java.rmi.Naming;
+import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
-import java.rmi.Naming;
 
-/**
- * Implementación del Broker. Se encarga de registrar servidores y servicios,
- * listar los servicios disponibles y ejecutar un servicio solicitándolo al servidor
- * correspondiente.
- */
 public class BrokerImpl extends UnicastRemoteObject implements BrokerInterface {
 
-    // Mapa de servidores: nombreServidor -> host remoto (IP o hostname)
-    private Map<String, String> servidores;
-    // Mapa de servicios: nombreServicio -> objeto Servicio
-    private Map<String, Servicio> servicios;
+    // Mapa de servidores: nombre del servidor -> host remoto
+    private Map<String, String> servidores = new HashMap<>();
+    // Mapa de servicios: nombre del servicio -> objeto Servicio
+    private Map<String, Servicio> servicios = new HashMap<>();
+    // Mapa de solicitudes asíncronas: nombre del servicio -> objeto AsyncRequest
+    private Map<String, AsyncRequest> asyncRequests = new HashMap<>();
+
 
     protected BrokerImpl() throws RemoteException {
         super();
-        servidores = new HashMap<>();
-        servicios = new HashMap<>();
     }
 
     @Override
-    public synchronized void registrar_servidor(String nombre_servidor, String host_remoto_IP_puerto) throws RemoteException {
-        servidores.put(nombre_servidor, host_remoto_IP_puerto);
-        System.out.println("Servidor registrado: " + nombre_servidor + " en " + host_remoto_IP_puerto);
+    public synchronized void registrar_servidor(String serverName, String hostRemoto) throws RemoteException {
+        this.servidores.put(serverName, hostRemoto);
+        System.out.println("Servidor registrado: " + serverName + " en " + hostRemoto);
     }
 
     @Override
-    public synchronized void alta_servicio(String nombre_servidor, String nom_servicio, Vector lista_param, String tipo_retorno) throws RemoteException {
-        if (!servidores.containsKey(nombre_servidor)) {
-            System.out.println("Servidor no registrado: " + nombre_servidor);
-            return;
+    public synchronized void alta_servicio(String serverName, String serviceName, Vector listaParametros, String tipoRetorno) throws RemoteException {
+        if (!this.servidores.containsKey(serverName)) {
+            System.out.println("Servidor no registrado: " + serverName);
+        } else {
+            // Se asume que serviceName es también el nombre del método a invocar en el objeto remoto.
+            Servicio servicio = new Servicio(serverName, serviceName, listaParametros, tipoRetorno);
+            this.servicios.put(serviceName, servicio);
+            System.out.println("Servicio registrado: " + serviceName + " del servidor " + serverName);
         }
-        Servicio servicio = new Servicio(nombre_servidor, nom_servicio, lista_param, tipo_retorno);
-        servicios.put(nom_servicio, servicio);
-        System.out.println("Servicio registrado: " + nom_servicio + " del servidor " + nombre_servidor);
     }
 
     @Override
-    public synchronized void baja_servicio(String nombre_servidor, String nom_servicio) throws RemoteException {
-        Servicio servicio = servicios.get(nom_servicio);
-        if (servicio != null && servicio.getNombreServidor().equals(nombre_servidor)) {
-            servicios.remove(nom_servicio);
-            System.out.println("Servicio dado de baja: " + nom_servicio + " del servidor " + nombre_servidor);
+    public synchronized void baja_servicio(String serverName, String serviceName) throws RemoteException {
+        Servicio servicio = this.servicios.get(serviceName);
+        if (servicio != null && servicio.getNombreServidor().equals(serverName)) {
+            this.servicios.remove(serviceName);
+            System.out.println("Servicio dado de baja: " + serviceName + " del servidor " + serverName);
         } else {
             System.out.println("No se encontró el servicio o el servidor no coincide.");
         }
@@ -53,63 +51,105 @@ public class BrokerImpl extends UnicastRemoteObject implements BrokerInterface {
 
     @Override
     public synchronized Servicios lista_servicios() throws RemoteException {
-        return new Servicios(new Vector<>(servicios.values()));
+        return new Servicios(new Vector<>(this.servicios.values()));
     }
 
     @Override
-    public Respuesta ejecutar_servicio(String nom_servicio, Vector parametros_servicio) throws RemoteException {
-        Servicio servicio = servicios.get(nom_servicio);
+    public Respuesta ejecutar_servicio(String serviceName, Vector parametros) throws RemoteException {
+        Servicio servicio = this.servicios.get(serviceName);
         if (servicio == null) {
             return new Respuesta("Error: Servicio no encontrado");
         }
-        String nombreServidor = servicio.getNombreServidor();
-        String host = servidores.get(nombreServidor);
+
+        String serverName = servicio.getNombreServidor();
+        String host = this.servidores.get(serverName);
         if (host == null) {
             return new Respuesta("Error: Servidor no registrado");
         }
+
         try {
-            // Se construye la URL RMI del servidor (se asume que el objeto remoto está
-            // enlazado con el mismo nombre que el servidor).
-            String url = "rmi://" + host + "/" + nombreServidor;
-            
-            /* 
-             * Para la demostración se intenta primero buscar un servicio de suma y luego de resta.
-             * En una implementación real se podría usar reflexión o un mecanismo de invocación
-             * dinámica más general.
-             */
-            
-            try {
-                SumaService sumaService = (SumaService) Naming.lookup(url);
-            if (nom_servicio.equalsIgnoreCase("sumar")) {
-                int a = (Integer) parametros_servicio.get(0);
-                int b = (Integer) parametros_servicio.get(1);
-                int result = sumaService.sumar(a, b);
-                return new Respuesta("Resultado: " + result);
-            } else if (nom_servicio.equalsIgnoreCase("multiplicar")) {
-                int a = (Integer) parametros_servicio.get(0);
-                int b = (Integer) parametros_servicio.get(1);
-                int result = sumaService.multiplicar(a, b);
-                return new Respuesta("Resultado: " + result);
-            }
-            } catch (Exception e) {
-                // Se ignora para probar con la siguiente interfaz
-            }
-            try {
-                RestaService restaService = (RestaService) Naming.lookup(url);
-                if (nom_servicio.equalsIgnoreCase("restar")) {
-                    int a = (Integer) parametros_servicio.get(0);
-                    int b = (Integer) parametros_servicio.get(1);
-                    int result = restaService.restar(a, b);
-                    return new Respuesta("Resultado: " + result);
+            // Se construye la URL RMI usando el host y el nombre del servidor.
+            String url = "rmi://" + host + "/" + serverName;
+            // Se obtiene el objeto remoto de forma genérica.
+            Remote remoteObj = Naming.lookup(url);
+
+            // Se extrae el nombre del método a invocar (por ejemplo, "sumar", "multiplicar", etc.)
+            String methodName = servicio.getNombreServicio();
+
+            // Se obtienen los tipos de parámetros esperados a partir de la lista registrada.
+            // Se asume que la lista contiene strings como "int", "double", "String", etc.
+            Vector parametrosMeta = servicio.getListaParametros();
+            Class<?>[] parameterTypes = new Class<?>[parametrosMeta.size()];
+            for (int i = 0; i < parametrosMeta.size(); i++) {
+                String typeName = (String) parametrosMeta.get(i);
+                if (typeName.equalsIgnoreCase("int")) {
+                    parameterTypes[i] = int.class;
+                } else if (typeName.equalsIgnoreCase("double")) {
+                    parameterTypes[i] = double.class;
+                } else if (typeName.equalsIgnoreCase("String")) {
+                    parameterTypes[i] = String.class;
+                } else {
+                    parameterTypes[i] = Object.class;
                 }
-            } catch (Exception e) {
-                // No se encontró la interfaz correspondiente
             }
-            
-            return new Respuesta("Error: Servicio no ejecutable");
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return new Respuesta("Error al ejecutar el servicio: " + ex.getMessage());
+
+            // Se obtiene, mediante reflexión, el método a invocar de la clase del objeto remoto.
+            java.lang.reflect.Method m = remoteObj.getClass().getMethod(methodName, parameterTypes);
+
+            // Se preparan los argumentos a partir del vector recibido (se asume que son compatibles).
+            Object[] args = new Object[parametros.size()];
+            for (int i = 0; i < parametros.size(); i++) {
+                args[i] = parametros.get(i);
+            }
+
+            // Se invoca el método y se obtiene el resultado.
+            Object result = m.invoke(remoteObj, args);
+            return new Respuesta("Resultado: " + result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Respuesta("Error al ejecutar el servicio: " + e.getMessage());
         }
     }
+
+    @Override
+    public synchronized void ejecutar_servicio_asinc(String nom_servicio, Vector parametros, String clientId) throws RemoteException {
+        // Evitar múltiples solicitudes para el mismo servicio sin haber recogido la respuesta previa
+        if (asyncRequests.containsKey(nom_servicio)) {
+            System.out.println("Error: Ya existe una solicitud asíncrona para el servicio " + nom_servicio);
+            return;
+        }
+        // Crear la solicitud asíncrona con el clientId
+        AsyncRequest request = new AsyncRequest(clientId);
+        asyncRequests.put(nom_servicio, request);
+    
+        // Lanzar la ejecución en un hilo separado
+        new Thread(() -> {
+            try {
+                Respuesta resp = ejecutar_servicio(nom_servicio, parametros);
+                request.setRespuesta(resp);
+            } catch (RemoteException e) {
+                request.setRespuesta(new Respuesta("Error: " + e.getMessage()));
+            }
+        }).start();
+    }
+
+    @Override
+    public synchronized Respuesta obtener_respuesta_asinc(String nom_servicio, String clientId) throws RemoteException {
+        AsyncRequest request = asyncRequests.get(nom_servicio);
+        if (request == null) {
+            return new Respuesta("Error: No se realizó previamente la solicitud asíncrona para el servicio " + nom_servicio);
+        }
+        // Validar que el ID del cliente que solicita sea el mismo que realizó la petición
+        if (!request.getClientId().equals(clientId)) {
+            return new Respuesta("Error: El cliente que solicita la respuesta no es el mismo que hizo la petición");
+        }
+        if (request.isDelivered()) {
+            return new Respuesta("Error: La respuesta ya fue entregada previamente para el servicio " + nom_servicio);
+        }
+        // Marcar la solicitud como entregada y eliminarla
+        request.setDelivered(true);
+        asyncRequests.remove(nom_servicio);
+        return request.getRespuesta();
+    }
+
 }
