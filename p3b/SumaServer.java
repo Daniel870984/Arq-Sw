@@ -9,7 +9,7 @@ public class SumaServer {
     public static void main(String[] args) {
         try {
             String serverName = "sumaServer"; // Se recomienda usar un nombre único (por ejemplo, incorporando el NIA)
-            String brokerHost = "172.20.0.10"; // Se debe indicar la IP o hostname del Broker
+            String brokerHost = "localhost"; // Se debe indicar la IP o hostname del Broker
             SumaService sumaService = new SumaServiceImpl(serverName, brokerHost);
             try {
                 LocateRegistry.createRegistry(1099);
