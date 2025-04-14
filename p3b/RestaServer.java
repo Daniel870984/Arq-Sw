@@ -9,7 +9,7 @@ public class RestaServer {
     public static void main(String[] args) {
         try {
             String serverName = "restaServer";
-            String brokerHost = "155.210.154.200";
+            String brokerHost = "155.210.154.200"; // IP o hostname donde se encuentra el Broker
             RestaService restaService = new RestaServiceImpl(serverName, brokerHost);
             try {
                 LocateRegistry.createRegistry(1099);

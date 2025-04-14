@@ -31,7 +31,6 @@ public class BrokerImpl extends UnicastRemoteObject implements BrokerInterface {
         if (!this.servidores.containsKey(serverName)) {
             System.out.println("Servidor no registrado: " + serverName);
         } else {
-            // Se asume que serviceName es también el nombre del método a invocar en el objeto remoto.
             Servicio servicio = new Servicio(serverName, serviceName, listaParametros, tipoRetorno);
             this.servicios.put(serviceName, servicio);
             System.out.println("Servicio registrado: " + serviceName + " del servidor " + serverName);
@@ -96,7 +95,7 @@ public class BrokerImpl extends UnicastRemoteObject implements BrokerInterface {
             // Se obtiene, mediante reflexión, el método a invocar de la clase del objeto remoto.
             java.lang.reflect.Method m = remoteObj.getClass().getMethod(methodName, parameterTypes);
 
-            // Se preparan los argumentos a partir del vector recibido (se asume que son compatibles).
+            // Se preparan los argumentos a partir del vector recibido.
             Object[] args = new Object[parametros.size()];
             for (int i = 0; i < parametros.size(); i++) {
                 args[i] = parametros.get(i);

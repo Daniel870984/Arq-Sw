@@ -26,7 +26,7 @@ public class RestaServiceImpl extends UnicastRemoteObject implements RestaServic
     private void registrarEnBroker() {
         try {
             BrokerInterface broker = (BrokerInterface) Naming.lookup("rmi://" + brokerHost + "/broker");
-            String hostInfo = "155.210.154.201";
+            String hostInfo = "155.210.154.201"; // IP o hostname donde se encuentra el servidor
             broker.registrar_servidor(serverName, hostInfo);
             // Se registra el servicio "restar" con dos parámetros de tipo entero
             Vector params = new Vector();
