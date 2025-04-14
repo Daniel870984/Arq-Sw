@@ -26,7 +26,7 @@ public class SumaServiceImpl extends UnicastRemoteObject implements SumaService 
         try {
             BrokerInterface broker = (BrokerInterface) Naming.lookup("rmi://" + brokerHost + "/broker");
             // En este ejemplo se asume que el servicio se publica en la máquina local.
-            String hostInfo = "localhost";
+            String hostInfo = "155.210.154.201";
             broker.registrar_servidor(serverName, hostInfo);
             // Se registra el servicio "sumar" con dos parámetros de tipo entero
             Vector params = new Vector();

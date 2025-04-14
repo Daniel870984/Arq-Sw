@@ -10,7 +10,7 @@ public class Cliente {
             System.out.print("Ingrese su identificador de cliente: ");
             String clientId = scanner.nextLine();
 
-            String brokerHost = "localhost"; // IP o hostname donde se encuentra el Broker
+            String brokerHost = "155.210.154.200"; // IP o hostname donde se encuentra el Broker
             BrokerInterface broker = (BrokerInterface) Naming.lookup("rmi://" + brokerHost + "/broker");
             
             while (true) {

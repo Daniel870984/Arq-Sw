@@ -9,7 +9,7 @@ public class RestaServer {
     public static void main(String[] args) {
         try {
             String serverName = "restaServer";
-            String brokerHost = "localhost";
+            String brokerHost = "155.210.154.200";
             RestaService restaService = new RestaServiceImpl(serverName, brokerHost);
             try {
                 LocateRegistry.createRegistry(1099);
