@@ -1,14 +1,35 @@
 # producer.py
-from broker import Broker
-import sys
+
+import socket
+import time
+
+HOST = "127.0.0.1"
+PORT = 5000
 
 def main():
-    broker = Broker.get_instance()
-    cola = "task_queue"
-    broker.declarar_cola(cola)
-    mensaje = ' '.join(sys.argv[1:]) or "Hello World!"
-    broker.publicar(cola, mensaje)
-    print(f"[Producer] Mensaje enviado: {mensaje}")
+    """
+    Producer persistente:
+    - Se conecta una sola vez al broker.
+    - Permite enviar múltiples mensajes seguidos.
+    - Cierra la conexión cuando el usuario lo decide.
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((HOST, PORT))
+
+    sock.sendall("PRODUCER".encode())  # Enviar rol al broker
+    time.sleep(0.5)  # Pequeña espera para asegurar la identificación
+
+    print("[Producer] Conectado al broker. Escribe mensajes para enviar. Escribe 'exit' para salir.")
+    while True:
+        mensaje = input(">> ").strip()
+        if mensaje.lower() == "exit":
+            print("[Producer] Saliendo...")
+            break
+        if mensaje:
+            sock.sendall(mensaje.encode())
+            print(f"[Producer] Mensaje enviado: {mensaje}")
+
+    sock.close()
 
 if __name__ == "__main__":
     main()
