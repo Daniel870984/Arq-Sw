@@ -4,7 +4,7 @@ import socket
 import time    
 
 # Configuración del host y puerto donde está escuchando el broker
-HOST = "127.0.0.1"
+HOST = "172.28.0.2"
 PORT = 5000
 
 def tarea_lenta(sock, mensaje):
@@ -36,6 +36,7 @@ def main():
     sock.connect((HOST, PORT))                                # Se conecta al broker
 
     sock.sendall("CONSUMER".encode())  # Se identifica enviando el rol "CONSUMER" al broker
+    print("[Consumer] Conectado al broker. Esperando mensajes...")
 
     while True:
         try:

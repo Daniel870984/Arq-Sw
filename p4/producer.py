@@ -1,9 +1,7 @@
-# producer.py
-
 import socket
 import time
 
-HOST = "127.0.0.1"
+HOST = "broker"
 PORT = 5000
 
 def main():
@@ -28,6 +26,9 @@ def main():
         if mensaje:
             sock.sendall(mensaje.encode())
             print(f"[Producer] Mensaje enviado: {mensaje}")
+            if mensaje.upper().startswith("LIST") or mensaje.upper().startswith("DELETE"):
+                response = sock.recv(1024).decode()
+                print(f"[Producer] Respuesta del broker: {response}")
 
     sock.close()
 

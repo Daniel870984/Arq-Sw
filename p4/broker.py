@@ -6,7 +6,7 @@ import time
 from collections import deque
 
 # Configuración de red
-HOST = "127.0.0.1"  # IP de localhost
+HOST = "172.28.0.2"  # IP de localhost
 PORT = 5000         # Puerto donde el broker escucha
 
 class Broker:
